@@ -1,0 +1,3 @@
+[submodule "kondo-ics"]
+	path = kondo-ics
+	url = https://github.com/yamaguchi-am/kondo-ics
