@@ -1,0 +1,6 @@
+[submodule "kondo-ics"]
+	path = kondo-ics
+	url = https://github.com/yamaguchi-am/kondo-ics
+[submodule "third_party/cminpack"]
+	path = third_party/cminpack
+	url = https://github.com/devernay/cminpack.git
