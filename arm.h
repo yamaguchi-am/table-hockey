@@ -23,7 +23,11 @@ struct ArmConfig {
   static ArmConfig Default();
 
   void Encode(double* x) const;
-  void Decode(const double x[10]);
+  void Decode(const double* x);
+
+  void WriteToFileStorage(cv::FileStorage& fs) const;
+  void ReadFromFileNode(cv::FileNode node);
+
   cv::Point2d p;  // right base
   cv::Point2d q;  // left base
   double l1;      // right upper arm

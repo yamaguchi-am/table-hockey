@@ -24,9 +24,14 @@ const std::string kMainWindow = "preview";
 
 DEFINE_int32(cam_id, 0, "camera ID");
 DEFINE_string(cam_calib, "../data/vga.xml", "camera calibration XML file");
+DEFINE_string(config, "config.yaml", "configuration file");
 DEFINE_string(port, "/dev/ttyUSB0", "serial port for KONDO ICS adapter");
 DEFINE_bool(ignore_servo_offline, true,
             "continue even when servos are not responding at startup");
+DEFINE_int32(chess_rows, 5, "# of rows in the calibration chessboard");
+DEFINE_int32(chess_cols, 8, "# of cols in the calibration chessboard");
+DEFINE_int32(chess_pitch, 41.1,
+             "edge length of the squares in the calibration chessboard");
 
 void DrawAxis(const Calib& calib, cv::Mat* img) {
   cv::Point2d o = calib.Project(cv::Point3d(0, 0, 0));
@@ -133,6 +138,73 @@ std::vector<double> DecideMove(bool found, const ArmConfig& config,
   return angles;
 }
 
+std::vector<cv::Point3f> MakeCheckerPattern(int rows, int cols, double size) {
+  std::vector<cv::Point3f> checker_pattern;
+  for (int i = 0; i < rows; i++) {
+    for (int j = 0; j < cols; j++) {
+      checker_pattern.emplace_back(cv::Point3f(i * size, j * size, 0));
+    }
+  }
+  return checker_pattern;
+}
+
+bool CaptureCameraPosition(const cv::Mat& undistort, Calib& calib,
+                           Calib* result) {
+  cv::Size chessboard_size(FLAGS_chess_cols, FLAGS_chess_rows);
+  std::vector<cv::Point2f> corners;
+  cv::findChessboardCorners(undistort, chessboard_size, corners);
+  if (corners.size() !=
+      static_cast<size_t>(chessboard_size.width * chessboard_size.height)) {
+    return false;
+  }
+  cv::Mat t;
+  cv::Mat rvec;
+  std::vector<cv::Point3f> checker_pattern =
+      MakeCheckerPattern(FLAGS_chess_rows, FLAGS_chess_cols, FLAGS_chess_pitch);
+  cv::solvePnP(checker_pattern, corners, calib.intrinsic, calib.distortion,
+               rvec, t);
+  cv::Mat rmat;
+  cv::Rodrigues(rvec, rmat);
+  *result = Calib(calib);
+  result->SetExtrinsic(rmat, t);
+  return true;
+}
+
+void operator<<(cv::FileStorage& fs, const FieldConfig& field) {
+  fs << "y_min" << field.y_min;
+  fs << "y_max" << field.y_max;
+}
+
+void LoadFieldConfig(cv::FileNode fs, FieldConfig* field) {
+  fs["y_min"] >> field->y_min;
+  fs["y_max"] >> field->y_max;
+}
+
+void SaveAllConfig(const std::string& filename, const Calib& calib,
+                   const FieldConfig& field, const ArmConfig& arm) {
+  cv::FileStorage fs(filename, cv::FileStorage::WRITE);
+  fs << "camera"
+     << "{";
+  calib.WriteToFileStorage(fs);
+  fs << "}";
+  fs << "field"
+     << "{";
+  fs << field;
+  fs << "}";
+  fs << "arm"
+     << "{";
+  arm.WriteToFileStorage(fs);
+  fs << "}";
+}
+
+void LoadAllConfig(const std::string& filename, Calib* calib,
+                   FieldConfig* field, ArmConfig* arm) {
+  cv::FileStorage fs(filename, cv::FileStorage::READ);
+  calib->ReadFromFileNode(fs["camera"]);
+  LoadFieldConfig(fs["field"], field);
+  arm->ReadFromFileNode(fs["arm"]);
+}
+
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
@@ -199,14 +271,20 @@ int main(int argc, char** argv) {
   auto param = ColorDetectorParam::Chroma(150, 10, 5);
   CalibrationData calib_data;
   cv::namedWindow(kMainWindow);
+  bool calibrate = false;
 
   while (true) {
     StopWatch main_loop_watch;
     double current_time = GettimeofdayInSeconds();
     capture >> raw_image;
+
     StopWatch detector_watch;
     cv::remap(raw_image, undistort, map1, map2,
               cv::InterpolationFlags::INTER_LINEAR);
+    if (calibrate) {
+      CaptureCameraPosition(undistort, calib, &calib);
+      calibrate = false;
+    }
     cv::Point2d pt;
     cv::Mat small;
     cv::pyrDown(undistort, small);
@@ -262,6 +340,12 @@ int main(int argc, char** argv) {
               pt3d.x, pt3d.y, current_angles[0], current_angles[1]});
         }
         break;
+      case 'W':
+        SaveAllConfig(FLAGS_config, calib, field, config);
+        break;
+      case 'R':
+        LoadAllConfig(FLAGS_config, &calib, &field, &config);
+        break;
       case 'S':
         calib_data.Save("calib_points.txt");
         break;
@@ -281,6 +365,9 @@ int main(int argc, char** argv) {
       case '2':
         field.y_max = pt3d.y;
         estimator.UpdateFieldConfig(field);
+        break;
+      case 'F':
+        calibrate = true;
         break;
     }
   }

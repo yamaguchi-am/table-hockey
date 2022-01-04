@@ -24,6 +24,19 @@ void Calib::Load(const char* filename, double yOffset) {
     std::cerr << "failed to open file: " << filename << std::endl;
     exit(-1);
   }
+  ReadFromFileNode(fs.root());
+}
+
+void Calib::WriteToFileStorage(cv::FileStorage& fs) const {
+  fs << "intrinsic" << intrinsic;
+  fs << "distortion" << distortion;
+  cv::Mat rvec;
+  cv::Rodrigues(r, rvec);
+  fs << "rotation" << rvec;
+  fs << "translation" << t;
+}
+
+void Calib::ReadFromFileNode(cv::FileNode fs) {
   fs["intrinsic"] >> intrinsic;
   fs["distortion"] >> distortion;
   cv::Mat rvec;

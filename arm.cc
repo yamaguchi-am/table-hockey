@@ -7,6 +7,8 @@
 
 namespace {
 
+constexpr int kConfigDOF = 12;
+
 cv::Point2d unit(double dir) { return cv::Point2d(cos(dir), sin(dir)); }
 
 double squ(double x) { return x * x; }
@@ -128,7 +130,7 @@ void ArmConfig::Encode(double* x) const {
   x[11] = trim1;
 }
 
-void ArmConfig::Decode(const double x[12]) {
+void ArmConfig::Decode(const double* x) {
   p.x = x[0];
   p.y = x[1];
   q.x = x[2];
@@ -141,6 +143,33 @@ void ArmConfig::Decode(const double x[12]) {
   a1 = x[9];
   trim0 = x[10];
   trim1 = x[11];
+}
+
+void ArmConfig::WriteToFileStorage(cv::FileStorage& fs) const {
+  double x[kConfigDOF];
+  Encode(x);
+  fs << "data"
+     << "[";
+  for (int i = 0; i < kConfigDOF; i++) {
+    fs << x[i];
+  }
+  fs << "]";
+}
+
+void ArmConfig::ReadFromFileNode(cv::FileNode node) {
+  double x[kConfigDOF];
+  auto n = node["data"];
+  if (n.type() != cv::FileNode::SEQ) {
+    std::cerr << "arm node is not sequence" << std::endl;
+    exit(-1);
+  }
+  int i = 0;
+  cv::FileNodeIterator it;
+  for (it = n.begin(); it != n.end() && i < kConfigDOF; it++, i++) {
+    x[i] = (double)*it;
+  }
+  assert(i == kConfigDOF && it == n.end());
+  Decode(x);
 }
 
 void CalibrationData::Save(const std::string& filename) const {
