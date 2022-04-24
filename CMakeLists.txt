@@ -70,10 +70,6 @@ target_link_libraries(motion_test
   GTest::Main
 )
 
-add_library(motion_estimator
-  motion_estimator.cc
-)
-
 add_subdirectory(kondo-ics)
 add_subdirectory(third_party/cminpack)
 

@@ -43,6 +43,8 @@ class PosHistory : public History {
   size_t idx_;
 };
 
+namespace {
+
 double Exterpolate(const History& data, double time, double* result_error) {
   const int kOrder = 1;  // Fit a 2nd order function
   const int n = data.size();
@@ -74,6 +76,8 @@ double Exterpolate(const History& data, double time, double* result_error) {
   }
   return result;
 }
+
+}  // namespace
 
 // T should be vector type
 template <class T>
