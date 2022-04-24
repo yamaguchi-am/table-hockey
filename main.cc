@@ -33,6 +33,24 @@ DEFINE_int32(chess_cols, 8, "# of cols in the calibration chessboard");
 DEFINE_double(chess_pitch, 41.1,
               "edge length of the squares in the calibration chessboard");
 
+struct BallDetectorParams {
+  int min_saturation;
+  int hue_mean;
+  int hue_width;
+
+  void WriteToFileStorage(cv::FileStorage& fs) const {
+    fs << "min_saturation" << min_saturation;
+    fs << "hue_mean" << hue_mean;
+    fs << "hue_width" << hue_width;
+  }
+
+  void ReadFromFileNode(cv::FileNode node) {
+    node["min_saturation"] >> min_saturation;
+    node["hue_mean"] >> hue_mean;
+    node["hue_width"] >> hue_width;
+  }
+};
+
 void DrawAxis(const Calib& calib, cv::Mat* img) {
   cv::Point2d o = calib.Project(cv::Point3d(0, 0, 0));
   cv::Point2d pt_x = calib.Project(cv::Point3d(50, 0, 0));
@@ -181,7 +199,8 @@ void LoadFieldConfig(cv::FileNode fs, FieldConfig* field) {
 }
 
 void SaveAllConfig(const std::string& filename, const Calib& calib,
-                   const FieldConfig& field, const ArmConfig& arm) {
+                   const FieldConfig& field, const ArmConfig& arm,
+                   const BallDetectorParams& ball) {
   cv::FileStorage fs(filename, cv::FileStorage::WRITE);
   fs << "camera"
      << "{";
@@ -195,14 +214,27 @@ void SaveAllConfig(const std::string& filename, const Calib& calib,
      << "{";
   arm.WriteToFileStorage(fs);
   fs << "}";
+  fs << "ball"
+     << "{";
+  ball.WriteToFileStorage(fs);
+  fs << "}";
 }
 
+void SetupTrackbar(BallDetectorParams& ball_config) {
+  cv::createTrackbar("hue-center", kMainWindow, &ball_config.hue_mean, 180);
+  cv::createTrackbar("hue-width", kMainWindow, &ball_config.hue_width, 90);
+  cv::createTrackbar("saturation", kMainWindow, &ball_config.min_saturation,
+                     255);
+};
+
 void LoadAllConfig(const std::string& filename, Calib* calib,
-                   FieldConfig* field, ArmConfig* arm) {
+                   FieldConfig* field, ArmConfig* arm,
+                   BallDetectorParams* ball) {
   cv::FileStorage fs(filename, cv::FileStorage::READ);
   calib->ReadFromFileNode(fs["camera"]);
   LoadFieldConfig(fs["field"], field);
   arm->ReadFromFileNode(fs["arm"]);
+  ball->ReadFromFileNode(fs["ball"]);
 }
 
 int main(int argc, char** argv) {
@@ -237,6 +269,10 @@ int main(int argc, char** argv) {
   FieldConfig field;
   field.y_max = 348;
   field.y_min = -81;
+  BallDetectorParams ball_config;
+  ball_config.min_saturation = 150;
+  ball_config.hue_mean = 10;
+  ball_config.hue_width = 5;
 
   // TODO: Save to / Load from data file.
   ArmConfig config = ArmConfig::Default();
@@ -267,11 +303,11 @@ int main(int argc, char** argv) {
   cv::Mat raw_image;
   cv::Mat undistort;
   ColorDetector detector;
-  // TODO: Load parameters from configuration file.
-  auto param = ColorDetectorParam::Chroma(150, 10, 5);
   CalibrationData calib_data;
   cv::namedWindow(kMainWindow);
   bool calibrate = false;
+
+  SetupTrackbar(ball_config);
 
   while (true) {
     StopWatch main_loop_watch;
@@ -288,6 +324,9 @@ int main(int argc, char** argv) {
     cv::Point2d pt;
     cv::Mat small;
     cv::pyrDown(undistort, small);
+    auto param =
+        ColorDetectorParam::Chroma(ball_config.min_saturation,
+                                   ball_config.hue_mean, ball_config.hue_width);
     cv::Mat result = detector.DetectAndReturnBinary(small, param);
     cv::Point2d pt2d;
     bool found = DetectBall(result, &pt2d);
@@ -341,10 +380,11 @@ int main(int argc, char** argv) {
         }
         break;
       case 'W':
-        SaveAllConfig(FLAGS_config, calib, field, config);
+        SaveAllConfig(FLAGS_config, calib, field, config, ball_config);
         break;
       case 'R':
-        LoadAllConfig(FLAGS_config, &calib, &field, &config);
+        LoadAllConfig(FLAGS_config, &calib, &field, &config, &ball_config);
+        SetupTrackbar(ball_config);
         break;
       case 'S':
         calib_data.Save("calib_points.txt");
