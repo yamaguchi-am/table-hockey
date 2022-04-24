@@ -30,8 +30,8 @@ DEFINE_bool(ignore_servo_offline, true,
             "continue even when servos are not responding at startup");
 DEFINE_int32(chess_rows, 5, "# of rows in the calibration chessboard");
 DEFINE_int32(chess_cols, 8, "# of cols in the calibration chessboard");
-DEFINE_int32(chess_pitch, 41.1,
-             "edge length of the squares in the calibration chessboard");
+DEFINE_double(chess_pitch, 41.1,
+              "edge length of the squares in the calibration chessboard");
 
 void DrawAxis(const Calib& calib, cv::Mat* img) {
   cv::Point2d o = calib.Project(cv::Point3d(0, 0, 0));
