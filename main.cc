@@ -115,7 +115,7 @@ std::vector<double> DecideMove(bool found, const ArmConfig& config,
                                const FieldConfig& field) {
   cv::Point2d pos;
   const double kHomeX = -80;
-  const double kHomeY = 150;
+  const double kHomeY = (field.y_max + field.y_min) / 2;
   const double kNormalSpeed = 400;
   const double kMaxSpeed = 2000;
   const double kBallDiameter = 40;
