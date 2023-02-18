@@ -63,4 +63,10 @@ class HockeyEstimator {
   double ymin_;
 };
 
+struct PlayerSettings {
+  int idle_speed;
+  int chase_speed;
+  int hit_speed;
+};
+
 #endif  // HOCKEY_H_

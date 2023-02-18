@@ -110,14 +110,13 @@ void DrawArm(const ArmConfig& config, const std::vector<double>& angles,
   cv::line(*img, r, s, color, thickness);
 }
 
-std::vector<double> DecideMove(bool found, const ArmConfig& config,
+std::vector<double> DecideMove(bool found, const ArmConfig& arm_config,
                                const cv::Point3d& pt3d, Waypoint* result,
-                               const FieldConfig& field) {
+                               const FieldConfig& field,
+                               const PlayerSettings& player_settings) {
   cv::Point2d pos;
   const double kHomeX = -80;
   const double kHomeY = (field.y_max + field.y_min) / 2;
-  const double kNormalSpeed = 400;
-  const double kMaxSpeed = 2000;
   const double kBallDiameter = 40;
   const double kRacketDiameter = 70;
   const double kHittingOverlap = 10;
@@ -126,15 +125,15 @@ std::vector<double> DecideMove(bool found, const ArmConfig& config,
   if (!found) {
     pos.x = kHomeX;
     pos.y = kHomeY;
-    result->speed = kNormalSpeed;
+    result->speed = player_settings.idle_speed;
   } else if (pt3d.x < kXNear) {
     pos.x = pt3d.x - kBallDiameter / 2 - kRacketDiameter / 2 + kHittingOverlap;
     pos.y = pt3d.y;
-    result->speed = kMaxSpeed;
+    result->speed = player_settings.hit_speed;
   } else {
     pos.x = kHomeX;
     pos.y = pt3d.y;
-    result->speed = kMaxSpeed;
+    result->speed = player_settings.chase_speed;
   }
   double y_min = field.y_min + margin;
   double y_max = field.y_max - margin;
@@ -144,14 +143,14 @@ std::vector<double> DecideMove(bool found, const ArmConfig& config,
     pos.y = y_max;
   }
   result->pos = pos;
-  if (!IsReachable(config, pos)) {
+  if (!IsReachable(arm_config, pos)) {
     pos.x = kHomeX;
     pos.y = kHomeY;
-    result->speed = kNormalSpeed;
+    result->speed = player_settings.idle_speed;
     result->pos = pos;
   }
   std::vector<double> angles;
-  bool valid = Inverse(config, pos, &angles);
+  bool valid = Inverse(arm_config, pos, &angles);
   assert(valid);
   return angles;
 }
@@ -309,6 +308,11 @@ int main(int argc, char** argv) {
 
   SetupTrackbar(ball_config);
 
+  PlayerSettings player;
+  player.idle_speed = 400;
+  player.chase_speed = 2000;
+  player.hit_speed = 2000;
+
   while (true) {
     StopWatch main_loop_watch;
     double current_time = GettimeofdayInSeconds();
@@ -345,14 +349,14 @@ int main(int argc, char** argv) {
       if (estimator.Estimate(current_time + 1.0 / 30 * 3, &est_pt)) {
         cv::circle(undistort, calib.Project(est_pt), 10,
                    cv::Scalar(0, 255, 255), 2);
-        DecideMove(found, config, est_pt, &wp, field);
+        DecideMove(found, config, est_pt, &wp, field, player);
       } else {
         Waypoint wp;
-        DecideMove(found, config, pt3d, &wp, field);
+        DecideMove(found, config, pt3d, &wp, field, player);
       }
     } else {
       // move to home position
-      DecideMove(found, config, pt3d, &wp, field);
+      DecideMove(found, config, pt3d, &wp, field, player);
     }
     if (active) {
       mm.SetDest(wp.pos, wp.speed);
