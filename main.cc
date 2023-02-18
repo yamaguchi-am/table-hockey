@@ -384,6 +384,7 @@ int main(int argc, char** argv) {
         break;
       case 'R':
         LoadAllConfig(FLAGS_config, &calib, &field, &config, &ball_config);
+        estimator.UpdateFieldConfig(field);
         SetupTrackbar(ball_config);
         break;
       case 'S':
