@@ -1,5 +1,5 @@
 #ifndef HOCKEY_H_
-#define HOCKEY_H__
+#define HOCKEY_H_
 
 #include <Eigen/Dense>
 
@@ -61,12 +61,6 @@ class HockeyEstimator {
   Estimator<Eigen::Vector3d> est_;
   double ymax_;
   double ymin_;
-};
-
-struct PlayerSettings {
-  int idle_speed;
-  int chase_speed;
-  int hit_speed;
 };
 
 #endif  // HOCKEY_H_

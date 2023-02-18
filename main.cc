@@ -13,6 +13,7 @@
 #include "hockey.h"
 #include "kondo_servo_driver.h"
 #include "motion.h"
+#include "player.h"
 #include "stop_watch.h"
 #include "time.h"
 
@@ -108,51 +109,6 @@ void DrawArm(const ArmConfig& config, const std::vector<double>& angles,
   cv::line(*img, a, r, color, thickness);
   cv::line(*img, b, r, color, thickness);
   cv::line(*img, r, s, color, thickness);
-}
-
-std::vector<double> DecideMove(bool found, const ArmConfig& arm_config,
-                               const cv::Point3d& pt3d, Waypoint* result,
-                               const FieldConfig& field,
-                               const PlayerSettings& player_settings) {
-  cv::Point2d pos;
-  const double kHomeX = -80;
-  const double kHomeY = (field.y_max + field.y_min) / 2;
-  const double kBallDiameter = 40;
-  const double kRacketDiameter = 70;
-  const double kHittingOverlap = 10;
-  const double kXNear = 70;
-  double margin = (kRacketDiameter - kBallDiameter) / 2 * 1.2;
-  if (!found) {
-    pos.x = kHomeX;
-    pos.y = kHomeY;
-    result->speed = player_settings.idle_speed;
-  } else if (pt3d.x < kXNear) {
-    pos.x = pt3d.x - kBallDiameter / 2 - kRacketDiameter / 2 + kHittingOverlap;
-    pos.y = pt3d.y;
-    result->speed = player_settings.hit_speed;
-  } else {
-    pos.x = kHomeX;
-    pos.y = pt3d.y;
-    result->speed = player_settings.chase_speed;
-  }
-  double y_min = field.y_min + margin;
-  double y_max = field.y_max - margin;
-  if (pos.y < y_min) {
-    pos.y = y_min;
-  } else if (pos.y > y_max) {
-    pos.y = y_max;
-  }
-  result->pos = pos;
-  if (!IsReachable(arm_config, pos)) {
-    pos.x = kHomeX;
-    pos.y = kHomeY;
-    result->speed = player_settings.idle_speed;
-    result->pos = pos;
-  }
-  std::vector<double> angles;
-  bool valid = Inverse(arm_config, pos, &angles);
-  assert(valid);
-  return angles;
 }
 
 std::vector<cv::Point3f> MakeCheckerPattern(int rows, int cols, double size) {
@@ -308,10 +264,7 @@ int main(int argc, char** argv) {
 
   SetupTrackbar(ball_config);
 
-  PlayerSettings player;
-  player.idle_speed = 400;
-  player.chase_speed = 2000;
-  player.hit_speed = 2000;
+  Player player(400, 2000, 2000, config, field);
 
   while (true) {
     StopWatch main_loop_watch;
@@ -349,14 +302,14 @@ int main(int argc, char** argv) {
       if (estimator.Estimate(current_time + 1.0 / 30 * 3, &est_pt)) {
         cv::circle(undistort, calib.Project(est_pt), 10,
                    cv::Scalar(0, 255, 255), 2);
-        DecideMove(found, config, est_pt, &wp, field, player);
+        player.DecideMove(found, est_pt, &wp);
       } else {
         Waypoint wp;
-        DecideMove(found, config, pt3d, &wp, field, player);
+        player.DecideMove(found, pt3d, &wp);
       }
     } else {
       // move to home position
-      DecideMove(found, config, pt3d, &wp, field, player);
+      player.DecideMove(found, pt3d, &wp);
     }
     if (active) {
       mm.SetDest(wp.pos, wp.speed);
