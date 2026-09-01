@@ -4,8 +4,8 @@ project(hockey)
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV 4 REQUIRED)
 find_package(gflags)
+find_package(Threads REQUIRED)
 find_package(GTest REQUIRED)
-
 
 set(CMAKE_C_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS "-std=c++17 -Wall")
@@ -79,8 +79,9 @@ add_executable(main
   kondo_servo_driver.cc
   player.cc
 )
-target_link_libraries(main
+target_link_libraries(main PRIVATE
     ${OpenCV_LIBS}
+    Threads::Threads
     arm
     ball_detector
     calib
