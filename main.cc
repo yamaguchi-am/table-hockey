@@ -158,20 +158,16 @@ void SaveAllConfig(const std::string& filename, const Calib& calib,
                    const FieldConfig& field, const ArmConfig& arm,
                    const BallDetectorParams& ball) {
   cv::FileStorage fs(filename, cv::FileStorage::WRITE);
-  fs << "camera"
-     << "{";
+  fs << "camera" << "{";
   calib.WriteToFileStorage(fs);
   fs << "}";
-  fs << "field"
-     << "{";
+  fs << "field" << "{";
   fs << field;
   fs << "}";
-  fs << "arm"
-     << "{";
+  fs << "arm" << "{";
   arm.WriteToFileStorage(fs);
   fs << "}";
-  fs << "ball"
-     << "{";
+  fs << "ball" << "{";
   ball.WriteToFileStorage(fs);
   fs << "}";
 }

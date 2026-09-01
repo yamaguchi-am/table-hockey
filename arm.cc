@@ -148,8 +148,7 @@ void ArmConfig::Decode(const double* x) {
 void ArmConfig::WriteToFileStorage(cv::FileStorage& fs) const {
   double x[kConfigDOF];
   Encode(x);
-  fs << "data"
-     << "[";
+  fs << "data" << "[";
   for (int i = 0; i < kConfigDOF; i++) {
     fs << x[i];
   }
