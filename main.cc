@@ -23,7 +23,8 @@ const std::string kMainWindow = "preview";
 
 }  // namespace
 
-DEFINE_int32(cam_id, 0, "camera ID");
+DEFINE_int32(cam_id, 0, "camera index (deprecated; use cam_device)");
+DEFINE_string(cam_device, "", "camera device path");
 DEFINE_string(cam_calib, "../data/vga.xml", "camera calibration XML file");
 DEFINE_string(config, "config.yaml", "configuration file");
 DEFINE_string(port, "/dev/ttyUSB0", "serial port for KONDO ICS adapter");
@@ -205,7 +206,12 @@ int main(int argc, char** argv) {
       calib.intrinsic, calib.distortion, cv::noArray(), calib.intrinsic,
       cv::Size(kImageWidth, kImageHeight), CV_32FC1, map1, map2);
 
-  cv::VideoCapture capture(FLAGS_cam_id);
+  cv::VideoCapture capture;
+  if (FLAGS_cam_device.empty()) {
+    capture.open(FLAGS_cam_id);
+  } else {
+    capture.open(FLAGS_cam_device);
+  }
   if (!capture.isOpened()) {
     std::cerr << "failed to open video capture device" << std::endl;
     return -1;
