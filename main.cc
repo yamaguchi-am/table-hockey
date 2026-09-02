@@ -338,21 +338,21 @@ int main(int argc, char** argv) {
               pt3d.x, pt3d.y, current_angles[0], current_angles[1]});
         }
         break;
-      case 'W':
+      case 'w':
         SaveAllConfig(FLAGS_config, calib, field, config, ball_config);
         break;
-      case 'R':
+      case 'r':
         LoadAllConfig(FLAGS_config, &calib, &field, &config, &ball_config);
         estimator.UpdateFieldConfig(field);
         SetupTrackbar(ball_config);
         break;
-      case 'S':
+      case 's':
         calib_data.Save("calib_points.txt");
         break;
-      case 'L':
+      case 'l':
         calib_data.Load("calib_points.txt");
         break;
-      case 'O':
+      case 'o':
         Optimize(calib_data, config, &config);
         break;
       case 'g':
@@ -366,7 +366,7 @@ int main(int argc, char** argv) {
         field.y_max = pt3d.y;
         estimator.UpdateFieldConfig(field);
         break;
-      case 'F':
+      case 'f':
         calibrate = true;
         break;
     }
