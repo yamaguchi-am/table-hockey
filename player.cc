@@ -9,12 +9,12 @@
 std::vector<double> Player::DecideMove(bool found, const cv::Point3d& ball,
                                        Waypoint* result) {
   cv::Point2d pos;
-  const double kHomeX = -80;
+  const double kHomeX = field_.x_min;
   const double kHomeY = (field_.y_max + field_.y_min) / 2;
   const double kBallDiameter = 40;
   const double kRacketDiameter = 70;
   const double kHittingOverlap = 10;
-  const double kXNear = 70;
+  const double kXNear = field_.x_min + 150;
   double margin = (kRacketDiameter - kBallDiameter) / 2 * 1.2;
   if (!found) {
     pos.x = kHomeX;

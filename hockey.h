@@ -24,6 +24,7 @@ cv::Point3d PointFromEstimator(const Eigen::Vector3d& v) {
 struct FieldConfig {
   double y_max;
   double y_min;
+  double x_min;
 };
 
 class HockeyEstimator {

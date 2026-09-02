@@ -72,8 +72,8 @@ void DrawField(const Calib& calib, const FieldConfig& field, cv::Mat* img) {
   };
   auto border_color = cv::Scalar(255, 255, 255);
   auto grid_color = cv::Scalar(0, 255, 0);
-  double kXmin = -100;
-  double kXmax = 500;  // TODO: replace this with camera view limit
+  double kXmin = field.x_min;
+  double kXmax = field.x_min + 500;  // TODO: replace this with camera view limit
 
   DrawAxis(calib, img);
 
@@ -147,11 +147,13 @@ bool CaptureCameraPosition(const cv::Mat& undistort, Calib& calib,
 void operator<<(cv::FileStorage& fs, const FieldConfig& field) {
   fs << "y_min" << field.y_min;
   fs << "y_max" << field.y_max;
+  fs << "x_min" << field.x_min;
 }
 
 void LoadFieldConfig(cv::FileNode fs, FieldConfig* field) {
   fs["y_min"] >> field->y_min;
   fs["y_max"] >> field->y_max;
+  fs["x_min"] >> field->x_min;
 }
 
 void SaveAllConfig(const std::string& filename, const Calib& calib,
@@ -364,6 +366,10 @@ int main(int argc, char** argv) {
         break;
       case '2':
         field.y_max = pt3d.y;
+        estimator.UpdateFieldConfig(field);
+        break;
+      case '3':
+        field.x_min = pt3d.x;
         estimator.UpdateFieldConfig(field);
         break;
       case 'f':

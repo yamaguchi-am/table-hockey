@@ -34,6 +34,8 @@ See https://yamaguchi-am.blogspot.com/2021/12/blog-post.html for details.
 5. Configure field size.
   - Place the ball to the left edge of the field and enter [1] command.
   - Place the ball to the right edge of the field and enter [2] command.
+  - Attach the optical marker (ball) to the racket again, move it to the waiting position,
+    then enter [3] command (set min_x).
 
 6. Save the configuration by [W] command.
 
@@ -44,12 +46,13 @@ When the camera is replaced, go back to step 1.
 ## Key bindings
 
 - a: add hand-eye calibration data point.
-- F: capture camera position; fit the world coordinate system to a chess board pattern.
-- S: save hand-eye calibration data points to file (calib_points.txt). Deprecated. Use [W] to save arm parameters after optimization instead.
-- L: load hand-eye calibration data points from file. Deprecated.
-- W: save configuration (camera position, arm parameters, field borders) to file.
-- R: load configuration from file.
-- O: optimize hand-eye parameters using the data points.
+- f: capture camera position; fit the world coordinate system to a chess board pattern.
+- s: save hand-eye calibration data points to file (calib_points.txt). Deprecated. Use [W] to save arm parameters after optimization instead.
+- l: load hand-eye calibration data points from file. Deprecated.
+- w: save configuration (camera position, arm parameters, field borders) to file.
+- r: load configuration from file.
+- o: optimize hand-eye parameters using the data points.
 - g: toggle ON/OFF arm motion
 - 1: set field left (Y+) limit to the current ball position
 - 2: set field right (Y-) limit to the current ball position
+- 3: set field near (X-) limit to the current ball position
