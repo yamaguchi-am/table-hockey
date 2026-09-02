@@ -34,6 +34,9 @@ DEFINE_int32(chess_rows, 5, "# of rows in the calibration chessboard");
 DEFINE_int32(chess_cols, 8, "# of cols in the calibration chessboard");
 DEFINE_double(chess_pitch, 41.1,
               "edge length of the squares in the calibration chessboard");
+DEFINE_int32(idle_speed, 400, "speed for returning to home position");
+DEFINE_int32(chase_speed, 1000, "speed for chasing the ball");
+DEFINE_int32(hit_speed, 1200, "speed for hitting the ball");
 
 struct BallDetectorParams {
   int min_saturation;
@@ -268,7 +271,7 @@ int main(int argc, char** argv) {
 
   SetupTrackbar(ball_config);
 
-  Player player(400, 2000, 2000, config, field);
+  Player player(FLAGS_idle_speed, FLAGS_chase_speed, FLAGS_hit_speed, config, field);
 
   while (true) {
     StopWatch main_loop_watch;
