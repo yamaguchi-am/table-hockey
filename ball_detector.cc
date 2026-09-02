@@ -7,6 +7,7 @@
 
 bool DetectBall(cv::Mat& img, cv::Point2d* result) {
   constexpr int kMinRegionSizePixels = 30;
+  constexpr double kMaxInverseRoundness = 2.0;
   std::vector<std::vector<cv::Point>> contours;
   cv::findContours(img, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
   typedef std::pair<double, int> roundness_idx_pair;
@@ -32,7 +33,7 @@ bool DetectBall(cv::Mat& img, cv::Point2d* result) {
       [](const roundness_idx_pair& a, const roundness_idx_pair& b) {
         return a.first < b.first;
       });
-  if (best != candidates.end()) {
+  if (best != candidates.end() && best->first < kMaxInverseRoundness) {
     cv::RotatedRect r = cv::fitEllipse(contours[best->second]);
     *result = r.center;
     return true;
