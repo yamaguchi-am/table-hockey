@@ -11,6 +11,29 @@ See https://yamaguchi-am.blogspot.com/2021/12/blog-post.html for details.
   - 2 KRS servos (ID: 0 and 1, baud: 1.25M)
 - USB camera
 
+## Software dependencies
+- libgflags-dev
+- libgtest-dev
+- libeigen3-dev
+- libopencv-dev
+- setserial
+
+## System setup
+
+Set USB-serial device to low_latency mode.
+
+```
+setserial /dev/ttyUSB0 low_latency
+```
+
+Optionally, set it by udev rule. For example, for KONDO USB-DUAL adapter:
+```
+----[/etc/udev/rules.d/99-kondo.rules]----
+ACTION=="add", ATTRS{idVendor}=="165c", ATTRS{idProduct}=="0008", GROUP="dialout", RUN+="/bin/sh -c 'echo 165C 0008 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'", RUN+="/bin/sh -c 'setserial /dev/%k low_latency'", SYMLINK+="ttyUSB-KONDO_DUAL"
+```
+
+Note that `setserial` command must be installed before applying above rule.
+
 ## Build
 
     git submodule update --init
